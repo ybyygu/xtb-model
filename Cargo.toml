@@ -1,0 +1,19 @@
+# [[file:xtb.note::f70a0712][f70a0712]]
+[package]
+name = "xtb-model"
+edition = "2021"
+version = "0.0.1"
+authors = ["Wenping Guo <ybyygu@gmail.com>"]
+
+[dependencies]
+anyhow = "1"
+
+[build-dependencies]
+cc = "1"
+bindgen = "0.59"
+
+[dev-dependencies]
+      
+[features]
+adhoc = [] # for ad-hoc hacking
+# f70a0712 ends here
