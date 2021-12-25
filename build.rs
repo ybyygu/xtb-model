@@ -19,7 +19,7 @@ fn main() {
         // .flag("build/libxtb.a")
         // local wrapper for exposing only API what I need
         .file("wrapper.c")
-        .compile("libxtbmodel.a");
+        .compile("xtbmodel");
 
     println!("cargo:rustc-link-search=lib");
     println!("cargo:rustc-link-lib=static=xtb");
