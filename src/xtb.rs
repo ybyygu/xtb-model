@@ -9,16 +9,16 @@ use anyhow::*;
 pub struct XtbModel {
     atom_types: Vec<i32>,
     charge: f64,
-    uhf: i32,
+    uhf: usize,
     dipole: Option<[f64; 3]>,
 }
 
 impl XtbModel {
     /// Construct new XtbModel for atoms specified with atomic numbers in
     /// `atom_types`.
-    pub fn new(atom_types: &[i32]) -> Self {
+    pub fn new(atom_types: &[usize]) -> Self {
         Self {
-            atom_types: atom_types.to_vec(),
+            atom_types: atom_types.iter().map(|&x| x as i32).collect(),
             charge: 0.0,
             uhf: 0,
             dipole: None,
@@ -32,18 +32,22 @@ impl XtbModel {
     }
 
     /// With `n` unpaired electrons.
-    pub fn with_unpaired_electrons(mut self, n: i32) -> Self {
+    pub fn with_unpaired_electrons(mut self, n: usize) -> Self {
         self.uhf = n;
         self
     }
 
     /// Call XTB for evaluation of energy and gradient
     pub fn calculate_energy_and_gradient(&mut self, coord: &[f64], gradient: &mut [f64]) -> Result<f64> {
+        let n = self.atom_types.len();
+        assert_eq!(coord.len(), gradient.len(), "invalid array sizes");
+        assert_eq!(coord.len(), n * 3, "not a flatten cartesian coord array");
+
         let mut energy = 0.0;
         let mut dipole = [0.0; 3];
         let charge = self.charge;
-        let natoms = self.atom_types.len() as i32;
-        let uhf = self.uhf;
+        let natoms = n as i32;
+        let uhf = self.uhf.try_into().expect("uhf too large");
 
         let ret = unsafe {
             let coord = coord.as_ptr();
