@@ -10,13 +10,13 @@ fn main() {
     cc::Build::new()
         .cpp(false)
         .include("include")
-        .flag("-lm")
-        .flag("-lblas")
-        .flag("-llapack")
-        .flag("-lgfortran")
+        // .flag("-lm")
+        // .flag("-lblas")
+        // .flag("-llapack")
+        // .flag("-lgfortran")
         // .flag("-Lbuild")
         // .flag("-lxtb")
-        .flag("build/libxtb.a")
+        // .flag("build/libxtb.a")
         // local wrapper for exposing only API what I need
         .file("wrapper.c")
         .compile("libxtbmodel.a");

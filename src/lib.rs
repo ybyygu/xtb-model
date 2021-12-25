@@ -9,9 +9,9 @@ mod bindings {
 pub(crate) use bindings::*;
 // 3a96f242 ends here
 
-// [[file:../xtb.note::*imports][imports:1]]
-use std::os::raw::c_int;
-// imports:1 ends here
+// [[file:../xtb.note::0a60241b][0a60241b]]
+
+// 0a60241b ends here
 
 // [[file:../xtb.note::*mods][mods:1]]
 mod xtb;

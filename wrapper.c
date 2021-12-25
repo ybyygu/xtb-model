@@ -17,14 +17,12 @@ int xtb_calculate_energy_and_gradient(double const coord[], int const attyp[],
                                       int const natoms, double const charge,
                                       int const uhf, double *energy,
                                       double gradient[], double dipole[3]) {
-  double const thr = 1.0e-10;
-
   xtb_TEnvironment env;
   xtb_TMolecule mol;
   xtb_TCalculator calc;
   xtb_TResults res;
-  int buffersize = 512;
-  char buffer[buffersize];
+  /* int buffersize = 512; */
+  /* char buffer[buffersize]; */
 
   assert(XTB_API_VERSION == xtb_getAPIVersion());
 
@@ -80,5 +78,7 @@ int xtb_calculate_energy_and_gradient(double const coord[], int const attyp[],
   assert(!calc);
   assert(!mol);
   assert(!env);
+
+  return 0;
 }
 /* c29489e5 ends here */
