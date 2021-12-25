@@ -21,7 +21,7 @@ fn main() {
         .file("wrapper.c")
         .compile("libxtbmodel.a");
 
-    println!("cargo:rustc-link-search=build");
+    println!("cargo:rustc-link-search=lib");
     println!("cargo:rustc-link-lib=static=xtb");
     println!("cargo:rustc-link-lib=m");
     println!("cargo:rustc-link-lib=blas");
