@@ -18,9 +18,16 @@ mod raw;
 mod xtb;
 // b6996cbf ends here
 
-// [[file:../xtb.note::d625a7e0][d625a7e0]]
-/// xtb-src/test/api/c_api_example.c
-mod test {
+// [[file:../xtb.note::12b11409][12b11409]]
+pub use crate::xtb::*;
+
+/// Low level wrapper for xtb api
+pub mod libxtb {
+    pub use super::raw::*;
+}
+
+/// test data adopted from xtb-src/test/api/c_api_example.c
+pub mod test {
     pub const ATOM_COORDS: [f64; 21] = [
         0.00000000000000,
         0.00000000000000,
@@ -46,8 +53,4 @@ mod test {
     ];
     pub const ATOM_TYPES: [i32; 7] = [6, 6, 6, 1, 1, 1, 1];
 }
-// d625a7e0 ends here
-
-// [[file:../xtb.note::*pub][pub:1]]
-pub use crate::xtb::*;
-// pub:1 ends here
+// 12b11409 ends here

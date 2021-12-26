@@ -61,17 +61,14 @@ impl XtbEnvironment {
 // 8cd490ab ends here
 
 // [[file:../xtb.note::3bbaae4e][3bbaae4e]]
+/// Molecular structure data
 pub struct XtbMolecule {
     mol: xtb_TMolecule,
 }
 
 impl XtbMolecule {
-    fn new(mol: xtb_TMolecule) -> Self {
-        Self { mol }
-    }
-
     /// Create new molecular structure data (quantities in Bohr).
-    fn create(env: &XtbEnvironment, attyp: &[i32], coord: &[f64], charge: f64, uhf: i32) -> Result<Self> {
+    pub fn create(env: &XtbEnvironment, attyp: &[i32], coord: &[f64], charge: f64, uhf: i32) -> Result<Self> {
         let mol = unsafe {
             let natoms = attyp.len() as i32;
             let env = env.env;
@@ -83,6 +80,23 @@ impl XtbMolecule {
         let mol = Self { mol };
 
         Ok(mol)
+    }
+
+    /// Update coordinates and lattice parameters (quantities in Bohr)
+    pub fn update(&self, env: &XtbEnvironment, coord: &[f64], lattice: Option<[f64; 9]>) -> Result<()> {
+        unsafe {
+            let env = env.env;
+            let mol = self.mol;
+            let coord = coord.as_ptr();
+            if let Some(lat) = lattice {
+                xtb_updateMolecule(env, mol, coord, lat.as_ptr());
+            } else {
+                xtb_updateMolecule(env, mol, coord, null());
+            }
+        }
+        env.check_error()?;
+
+        Ok(())
     }
 }
 // 3bbaae4e ends here
@@ -101,9 +115,11 @@ impl XtbCalculator {
         }
     }
 
-    // Set parametrization of GFN-xTB method. GFN2-xTB is the default
-    // parametrization. Also available are GFN1-xTB, GFN0-xTB.
-    fn load_gfn(&self, mol: &XtbMolecule, env: &XtbEnvironment, n: usize) -> Result<()> {
+    /// Set parametrization of GFN-xTB method. GFN2-xTB is the default
+    /// parametrization. Also available are GFN1-xTB, GFN0-xTB.
+    ///
+    /// TODO: xtb_loadGFNFF
+    pub fn load_gfn(&self, mol: &XtbMolecule, env: &XtbEnvironment, n: usize) -> Result<()> {
         unsafe {
             let calc = self.calc;
             let mol = mol.mol;
@@ -199,28 +215,3 @@ impl_xtb_drop!(XtbMolecule, xtb_delMolecule, mol);
 impl_xtb_drop!(XtbResults, xtb_delResults, res);
 impl_xtb_drop!(XtbCalculator, xtb_delCalculator, calc);
 // 7d8b4594 ends here
-
-// [[file:../xtb.note::1c066e9f][1c066e9f]]
-#[test]
-fn test_xtb_raw_api() -> Result<()> {
-    let coord = test::ATOM_COORDS;
-    let attyp = [6, 6, 6, 1, 1, 1, 1];
-
-    let env = XtbEnvironment::new();
-    let mol = XtbMolecule::create(&env, &attyp, &coord, 0.0, 0)?;
-    let calc = XtbCalculator::new();
-    calc.load_gfn(&mol, &env, 2)?;
-    let res = calc.single_point(&mol, &env)?;
-    let energy = res.get_energy(&env)?;
-    let dipole = res.get_dipole(&env)?;
-    assert!((energy + 8.3824793849585).abs() < 1.0e-9);
-    assert!((dipole[2] + 0.298279305689518).abs() < 1.0e-6);
-
-    calc.load_gfn(&mol, &env, 1)?;
-    let res = calc.single_point(&mol, &env)?;
-    let energy = res.get_energy(&env)?;
-    assert!((energy + 8.424757953815186).abs() < 1.0e-9);
-
-    Ok(())
-}
-// 1c066e9f ends here
