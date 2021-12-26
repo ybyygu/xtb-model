@@ -2,6 +2,7 @@
 use anyhow::*;
 use xtb_model::test::ATOM_COORDS;
 use xtb_model::{XtbModel, XtbParameters};
+use approx::assert_relative_eq;
 
 #[test]
 fn test_xtb_raw_api() -> Result<()> {
@@ -13,9 +14,8 @@ fn test_xtb_raw_api() -> Result<()> {
     let energy = xtb.calculate_energy_and_gradient(&mut gradient)?;
     let dipole = xtb.get_dipole().unwrap();
 
-    assert!((energy + 8.3824793849585).abs() < 1.0e-9);
-    assert!((dipole[2] + 0.298279305689518).abs() < 1.0e-6);
-    dbg!(gradient);
+    assert_relative_eq!(energy, -8.3824793849585, epsilon=1e-9);
+    assert_relative_eq!(dipole[2], -0.298279305689518, epsilon=1e-6);
 
     let mut params = XtbParameters::default();
     params.charge(0.0).unpaired_electrons(2).output_minimal();

@@ -1,5 +1,6 @@
 // [[file:../xtb.note::1c066e9f][1c066e9f]]
 use anyhow::*;
+use approx::assert_relative_eq;
 use xtb_model::libxtb::*;
 use xtb_model::test::ATOM_COORDS;
 
@@ -15,13 +16,13 @@ fn test_xtb_raw_api() -> Result<()> {
     let res = calc.single_point(&mol, &env)?;
     let energy = res.get_energy(&env)?;
     let dipole = res.get_dipole(&env)?;
-    assert!((energy + 8.3824793849585).abs() < 1.0e-9);
-    assert!((dipole[2] + 0.298279305689518).abs() < 1.0e-6);
+    assert_relative_eq!(energy, -8.3824793849585, epsilon=1e-9);
+    assert_relative_eq!(dipole[2], -0.298279305689518, epsilon=1e-6);
 
     calc.load_gfn(&mol, &env, 1)?;
     let res = calc.single_point(&mol, &env)?;
     let energy = res.get_energy(&env)?;
-    assert!((energy + 8.424757953815186).abs() < 1.0e-9);
+    assert_relative_eq!(energy, -8.424757953815186, epsilon=1e-9);
 
     Ok(())
 }

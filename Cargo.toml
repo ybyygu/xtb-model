@@ -13,7 +13,8 @@ cc = "1"
 bindgen = "0.59"
 
 [dev-dependencies]
-      
+approx = "0.5"
+
 [features]
 adhoc = [] # for ad-hoc hacking
 # f70a0712 ends here
