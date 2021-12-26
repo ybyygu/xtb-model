@@ -9,7 +9,7 @@ authors = ["Wenping Guo <ybyygu@gmail.com>"]
 anyhow = "1"
 
 [build-dependencies]
-cc = "1"
+# cc = "1"
 bindgen = "0.59"
 
 [dev-dependencies]
