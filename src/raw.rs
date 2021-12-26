@@ -35,7 +35,7 @@ impl XtbEnvironment {
     }
 
     /// Set verbosity of calculation output.
-    fn set_verbosity(&mut self, verbosity: u32) -> Result<()> {
+    fn set_verbosity(&self, verbosity: u32) -> Result<()> {
         unsafe {
             xtb_setVerbosity(self.env, verbosity as i32);
         }
@@ -44,17 +44,17 @@ impl XtbEnvironment {
     }
 
     /// Set verbosity of calculation output to be verbose
-    pub fn set_output_verbose(&mut self) -> Result<()> {
+    pub fn set_output_verbose(&self) -> Result<()> {
         self.set_verbosity(XTB_VERBOSITY_FULL)
     }
 
     /// Set verbosity of calculation output to be minimal
-    pub fn set_output_minimal(&mut self) -> Result<()> {
+    pub fn set_output_minimal(&self) -> Result<()> {
         self.set_verbosity(XTB_VERBOSITY_MINIMAL)
     }
 
     /// Set verbosity of calculation output to be muted
-    pub fn set_output_muted(&mut self) -> Result<()> {
+    pub fn set_output_muted(&self) -> Result<()> {
         self.set_verbosity(XTB_VERBOSITY_MUTED)
     }
 }
@@ -71,7 +71,7 @@ impl XtbMolecule {
     }
 
     /// Create new molecular structure data (quantities in Bohr).
-    fn create(env: &mut XtbEnvironment, attyp: &[i32], coord: &[f64], charge: f64, uhf: i32) -> Result<Self> {
+    fn create(env: &XtbEnvironment, attyp: &[i32], coord: &[f64], charge: f64, uhf: i32) -> Result<Self> {
         let mol = unsafe {
             let natoms = attyp.len() as i32;
             let env = env.env;
@@ -103,7 +103,7 @@ impl XtbCalculator {
 
     // Set parametrization of GFN-xTB method. GFN2-xTB is the default
     // parametrization. Also available are GFN1-xTB, GFN0-xTB.
-    fn load_gfn(&mut self, mol: &XtbMolecule, env: &mut XtbEnvironment, n: usize) -> Result<()> {
+    fn load_gfn(&self, mol: &XtbMolecule, env: &XtbEnvironment, n: usize) -> Result<()> {
         unsafe {
             let calc = self.calc;
             let mol = mol.mol;
@@ -119,7 +119,8 @@ impl XtbCalculator {
         Ok(())
     }
 
-    pub fn single_point(&mut self, mol: &XtbMolecule, env: &mut XtbEnvironment) -> Result<XtbResults> {
+    /// Perform singlepoint calculation.
+    pub fn single_point(&self, mol: &XtbMolecule, env: &XtbEnvironment) -> Result<XtbResults> {
         let mut res = XtbResults::new();
         unsafe {
             let calc = self.calc;
@@ -205,18 +206,18 @@ fn test_xtb_raw_api() -> Result<()> {
     let coord = test::ATOM_COORDS;
     let attyp = [6, 6, 6, 1, 1, 1, 1];
 
-    let mut env = XtbEnvironment::new();
-    let mol = XtbMolecule::create(&mut env, &attyp, &coord, 0.0, 0)?;
-    let mut calc = XtbCalculator::new();
-    calc.load_gfn(&mol, &mut env, 2)?;
-    let res = calc.single_point(&mol, &mut env)?;
+    let env = XtbEnvironment::new();
+    let mol = XtbMolecule::create(&env, &attyp, &coord, 0.0, 0)?;
+    let calc = XtbCalculator::new();
+    calc.load_gfn(&mol, &env, 2)?;
+    let res = calc.single_point(&mol, &env)?;
     let energy = res.get_energy(&env)?;
     let dipole = res.get_dipole(&env)?;
     assert!((energy + 8.3824793849585).abs() < 1.0e-9);
     assert!((dipole[2] + 0.298279305689518).abs() < 1.0e-6);
 
-    calc.load_gfn(&mol, &mut env, 1)?;
-    let res = calc.single_point(&mol, &mut env)?;
+    calc.load_gfn(&mol, &env, 1)?;
+    let res = calc.single_point(&mol, &env)?;
     let energy = res.get_energy(&env)?;
     assert!((energy + 8.424757953815186).abs() < 1.0e-9);
 
