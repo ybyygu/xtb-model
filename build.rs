@@ -30,6 +30,7 @@ fn main() {
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
+        .header("include/xtb.h")
         .rustfmt_bindings(true)
         .generate()
         .expect("Unable to generate bindings");
