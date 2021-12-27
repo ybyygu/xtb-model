@@ -138,7 +138,7 @@ impl XtbModel {
 
         // FIXME: lattice
         mol.update(env, &self.coord, None)?;
-        self.calc.load_gfn(mol, env, 2)?;
+        self.calc.set_method(mol, env, XtbMethod::GFN2xTB)?;
         let res = self.calc.single_point(mol, env)?;
         let energy = res.get_energy(env)?;
         res.get_gradient(env, gradient)?;

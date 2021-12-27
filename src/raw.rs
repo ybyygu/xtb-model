@@ -102,6 +102,18 @@ impl XtbMolecule {
 // 3bbaae4e ends here
 
 // [[file:../xtb.note::e737b33d][e737b33d]]
+/// Possible parametrisations for the Calculator.
+pub enum XtbMethod {
+    /// GFN2-xTB
+    GFN2xTB,
+    /// GFN1-xTB
+    GFN1xTB,
+    /// GFN0-xTB
+    GFN0xTB,
+    /// GFN0-FF
+    GFNFF,
+}
+
 /// XTB single point calculator
 pub struct XtbCalculator {
     calc: xtb_TCalculator,
@@ -115,19 +127,17 @@ impl XtbCalculator {
         }
     }
 
-    /// Set parametrization of GFN-xTB method. GFN2-xTB is the default
-    /// parametrization. Also available are GFN1-xTB, GFN0-xTB.
-    ///
-    /// TODO: xtb_loadGFNFF
-    pub fn load_gfn(&self, mol: &XtbMolecule, env: &XtbEnvironment, n: usize) -> Result<()> {
+    /// Set parametrization of GFN-xTB method.
+    pub fn set_method(&self, mol: &XtbMolecule, env: &XtbEnvironment, method: XtbMethod) -> Result<()> {
         unsafe {
             let calc = self.calc;
             let mol = mol.mol;
             let env = env.env;
-            match n {
-                0 => xtb_loadGFN0xTB(env, mol, calc, std::ptr::null_mut()),
-                1 => xtb_loadGFN1xTB(env, mol, calc, std::ptr::null_mut()),
-                2 => xtb_loadGFN2xTB(env, mol, calc, std::ptr::null_mut()),
+            match method {
+                XtbMethod::GFNFF => xtb_loadGFNFF(env, mol, calc, std::ptr::null_mut()),
+                XtbMethod::GFN0xTB => xtb_loadGFN0xTB(env, mol, calc, std::ptr::null_mut()),
+                XtbMethod::GFN1xTB => xtb_loadGFN1xTB(env, mol, calc, std::ptr::null_mut()),
+                XtbMethod::GFN2xTB => xtb_loadGFN2xTB(env, mol, calc, std::ptr::null_mut()),
                 _ => unimplemented!(),
             }
         }
