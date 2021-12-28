@@ -19,8 +19,6 @@ pub struct XtbParameters {
     electronic_temperature: f64,
     method: XtbMethod,
     // TODO: solvent
-    // method:
-    // accuracy:
 }
 
 #[derive(Clone, Debug)]
@@ -180,6 +178,9 @@ impl XtbModel {
         // FIXME: lattice
         mol.update(env, &self.coord, None)?;
         self.calc.set_method(mol, env, self.params.method)?;
+        self.calc.set_accuracy(env, 1.0);
+        self.calc.set_electronic_temperature(env, self.params.electronic_temperature);
+        self.calc.set_max_iterations(env, self.params.max_iterations);
         let res = self.calc.single_point(mol, env)?;
         let energy = res.get_energy(env)?;
         res.get_gradient(env, gradient)?;

@@ -146,6 +146,27 @@ impl XtbCalculator {
         Ok(())
     }
 
+    /// Set maximum number of iterations for self-consistent TB calculators.
+    pub fn set_max_iterations(&self, env: &XtbEnvironment, n: usize) {
+        unsafe {
+            xtb_setMaxIter(env.env, self.calc, n as i32);
+        }
+    }
+
+    /// Set electronic temperature for level filling in tight binding calculators in K
+    pub fn set_electronic_temperature(&self, env: &XtbEnvironment, temp: f64) {
+        unsafe {
+            xtb_setElectronicTemp(env.env, self.calc, temp);
+        }
+    }
+
+    /// Set numerical accuracy of calculator in the range of 1000 to 0.0001
+    pub fn set_accuracy(&self, env: &XtbEnvironment, acc: f64) {
+        unsafe {
+            xtb_setAccuracy(env.env, self.calc, acc);
+        }
+    }
+
     /// Perform singlepoint calculation.
     pub fn single_point(&self, mol: &XtbMolecule, env: &XtbEnvironment) -> Result<XtbResults> {
         let mut res = XtbResults::new();
@@ -200,6 +221,70 @@ impl XtbResults {
     pub fn get_gradient(&self, env: &XtbEnvironment, gradient: &mut [f64]) -> Result<()> {
         unsafe {
             xtb_getDipole(env.env, self.res, gradient.as_mut_ptr());
+        }
+        env.check_error()?;
+        Ok(())
+    }
+
+    /// Query singlepoint results object for bond orders
+    pub fn get_bond_orders(&self, env: &XtbEnvironment, bond_orders: &mut [f64]) -> Result<()> {
+        unsafe {
+            xtb_getBondOrders(env.env, self.res, bond_orders.as_mut_ptr());
+        }
+        env.check_error()?;
+        Ok(())
+    }
+
+    /// Query singlepoint results object for partial charges in e
+    pub fn get_charges(&self, env: &XtbEnvironment, charges: &mut [f64]) -> Result<()> {
+        unsafe {
+            xtb_getCharges(env.env, self.res, charges.as_mut_ptr());
+        }
+        env.check_error()?;
+        Ok(())
+    }
+
+    /// Query singlepoint results object for virial in Hartree
+    pub fn get_virial(&self, env: &XtbEnvironment, virial: &mut [f64]) -> Result<()> {
+        unsafe {
+            xtb_getVirial(env.env, self.res, virial.as_mut_ptr());
+        }
+        env.check_error()?;
+        Ok(())
+    }
+
+    /// Query singlepoint results object for the number of basis functions
+    pub fn get_nao(&self, env: &XtbEnvironment) -> Result<usize> {
+        let mut nao = 0;
+        unsafe {
+            xtb_getNao(env.env, self.res, &mut nao);
+        }
+        env.check_error()?;
+        Ok(nao as usize)
+    }
+
+    /// Query singlepoint results object for orbital energies in Hartree [nao]
+    pub fn get_orbital_eigenvalues(&self, env: &XtbEnvironment, emo: &mut [f64]) -> Result<()> {
+        unsafe {
+            xtb_getOrbitalEigenvalues(env.env, self.res, emo.as_mut_ptr());
+        }
+        env.check_error()?;
+        Ok(())
+    }
+
+    /// Query singlepoint results object for occupation numbers [nao]
+    pub fn get_orbital_occupations(&self, env: &XtbEnvironment, focc: &mut [f64]) -> Result<()> {
+        unsafe {
+            xtb_getOrbitalOccupations(env.env, self.res, focc.as_mut_ptr());
+        }
+        env.check_error()?;
+        Ok(())
+    }
+
+    /// Query singlepoint results object for orbital coefficients [nao][nao]
+    pub fn get_orbital_coefficients(&self, env: &XtbEnvironment, forb: &mut [f64]) -> Result<()> {
+        unsafe {
+            xtb_getOrbitalCoefficients(env.env, self.res, forb.as_mut_ptr());
         }
         env.check_error()?;
         Ok(())
