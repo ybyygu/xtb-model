@@ -143,7 +143,7 @@ impl XtbModel {
         let charge = params.charge;
         let mol = XtbMolecule::create(&env, &atom_types, coord, charge, uhf)?;
         let mut calc = XtbCalculator::new();
-        calc.set_method(&mol, &env, params.method)?;
+        calc.load_parametrization(&mol, &env, params.method)?;
         let xtb = Self {
             coord: coord.to_vec(),
             dipole: None,
@@ -177,7 +177,7 @@ impl XtbModel {
 
         // FIXME: lattice
         mol.update(env, &self.coord, None)?;
-        self.calc.set_method(mol, env, self.params.method)?;
+        self.calc.load_parametrization(mol, env, self.params.method)?;
         self.calc.set_accuracy(env, 1.0);
         self.calc.set_electronic_temperature(env, self.params.electronic_temperature);
         self.calc.set_max_iterations(env, self.params.max_iterations);

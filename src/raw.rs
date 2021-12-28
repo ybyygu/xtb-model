@@ -128,8 +128,8 @@ impl XtbCalculator {
         }
     }
 
-    /// Set parametrization of GFN-xTB method.
-    pub fn set_method(&self, mol: &XtbMolecule, env: &XtbEnvironment, method: XtbMethod) -> Result<()> {
+    /// Load parametrization of GFN-xTB method `method`.
+    pub fn load_parametrization(&self, mol: &XtbMolecule, env: &XtbEnvironment, method: XtbMethod) -> Result<()> {
         unsafe {
             let calc = self.calc;
             let mol = mol.mol;
