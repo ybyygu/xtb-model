@@ -1,10 +1,14 @@
+// [[file:../xtb.note::a89844af][a89844af]]
+//! high level wrapper for xTB
+// a89844af ends here
+
 // [[file:../xtb.note::a7b88800][a7b88800]]
 use super::*;
 
 use libxtb::*;
 // a7b88800 ends here
 
-// [[file:../xtb.note::bcd483ad][bcd483ad]]
+// [[file:../xtb.note::392dc74e][392dc74e]]
 /// Possible parameters for XTB calculation.
 #[derive(Clone, Debug)]
 pub struct XtbParameters {
@@ -13,6 +17,7 @@ pub struct XtbParameters {
     verbosity: XtbOutputVerbosity,
     max_iterations: usize,
     electronic_temperature: f64,
+    method: XtbMethod,
     // TODO: solvent
     // method:
     // accuracy:
@@ -25,15 +30,27 @@ pub enum XtbOutputVerbosity {
     Verbose,
 }
 
+impl From<&str> for XtbMethod {
+    fn from(s: &str) -> Self {
+        match s.to_uppercase().as_str() {
+            "GFN2XTB" | "GFN2-XTB" => XtbMethod::GFN2xTB,
+            "GFN1XTB" | "GFN1-XTB" => XtbMethod::GFN1xTB,
+            "GFN0XTB" | "GFN0-XTB" => XtbMethod::GFN0xTB,
+            "GFNFF" | "GFN-FF" => XtbMethod::GFNFF,
+            _ => panic!("invalid xTB method: {}", s),
+        }
+    }
+}
+
 impl Default for XtbParameters {
     fn default() -> Self {
         Self {
             uhf: 0,
             charge: 0.0,
             verbosity: XtbOutputVerbosity::Muted,
-            // TODO
             max_iterations: 250,
             electronic_temperature: 300.0,
+            method: XtbMethod::GFN2xTB,
         }
     }
 }
@@ -48,6 +65,19 @@ impl XtbParameters {
     /// Set `n` unpaired electrons.
     pub fn unpaired_electrons(&mut self, n: usize) -> &mut Self {
         self.uhf = n;
+        self
+    }
+
+    /// Set electronic temperature for level filling in tight binding calculators in K.
+    pub fn electronic_temperature(&mut self, t: f64) -> &mut Self {
+        assert!(t.is_sign_positive(), "invalid temperature {:?}", t);
+        self.electronic_temperature = t;
+        self
+    }
+
+    /// Set maximum number of iterations for self-consistent TB calculators.
+    pub fn max_iterations(&mut self, n: usize) -> &mut Self {
+        self.max_iterations = n;
         self
     }
 
@@ -68,8 +98,16 @@ impl XtbParameters {
         self.verbosity = XtbOutputVerbosity::Muted;
         self
     }
-}
 
+    /// Set xTB class of method
+    pub fn method<M: Into<XtbMethod>>(&mut self, method: M) -> &mut Self {
+        self.method = method.into();
+        self
+    }
+}
+// 392dc74e ends here
+
+// [[file:../xtb.note::bcd483ad][bcd483ad]]
 /// High level abstraction for XTB evaluation of energy and gradient
 pub struct XtbModel {
     params: XtbParameters,
@@ -105,11 +143,14 @@ impl XtbModel {
 
         let uhf = params.uhf as i32;
         let charge = params.charge;
+        let mol = XtbMolecule::create(&env, &atom_types, coord, charge, uhf)?;
+        let mut calc = XtbCalculator::new();
+        calc.set_method(&mol, &env, params.method)?;
         let xtb = Self {
             coord: coord.to_vec(),
-            mol: XtbMolecule::create(&env, &atom_types, coord, charge, uhf)?,
-            calc: XtbCalculator::new(),
             dipole: None,
+            mol,
+            calc,
 
             params,
             atom_types,
@@ -138,7 +179,7 @@ impl XtbModel {
 
         // FIXME: lattice
         mol.update(env, &self.coord, None)?;
-        self.calc.set_method(mol, env, XtbMethod::GFN2xTB)?;
+        self.calc.set_method(mol, env, self.params.method)?;
         let res = self.calc.single_point(mol, env)?;
         let energy = res.get_energy(env)?;
         res.get_gradient(env, gradient)?;
@@ -153,3 +194,29 @@ impl XtbModel {
     }
 }
 // bcd483ad ends here
+
+// [[file:../xtb.note::2398beeb][2398beeb]]
+#[test]
+fn test_xtb_method_into() {
+    let m: XtbMethod= "GFN0xTB".into();
+    assert_eq!(m, XtbMethod::GFN0xTB);
+    let m: XtbMethod= "GFN0-xTB".into();
+    assert_eq!(m, XtbMethod::GFN0xTB);
+    let m: XtbMethod= "gfn0-xtb".into();
+    assert_eq!(m, XtbMethod::GFN0xTB);
+
+    let m: XtbMethod= "GFN1xTB".into();
+    assert_eq!(m, XtbMethod::GFN1xTB);
+    let m: XtbMethod= "GFN2xTB".into();
+    assert_eq!(m, XtbMethod::GFN2xTB);
+    let m: XtbMethod= "GFNFF".into();
+    assert_eq!(m, XtbMethod::GFNFF);
+    let m: XtbMethod= "GFN-FF".into();
+    assert_eq!(m, XtbMethod::GFNFF);
+}
+
+#[should_panic]
+fn test_xtb_method_into_panic() {
+    let m: XtbMethod= "gfn-xtb".into();
+}
+// 2398beeb ends here

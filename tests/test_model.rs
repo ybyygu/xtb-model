@@ -18,8 +18,10 @@ fn test_xtb_raw_api() -> Result<()> {
     assert_relative_eq!(dipole[2], -0.298279305689518, epsilon=1e-6);
 
     let mut params = XtbParameters::default();
-    params.charge(0.0).unpaired_electrons(2).output_minimal();
-    let xtb = XtbModel::create(&attyp, &coord, dbg!(params))?;
+    params.charge(0.0).unpaired_electrons(0).output_muted().method("GFN1-xTB");
+    let mut xtb = XtbModel::create(&attyp, &coord, dbg!(params))?;
+    let energy = xtb.calculate_energy_and_gradient(&mut gradient)?;
+    assert_relative_eq!(energy, -8.424757953815186, epsilon=1e-9);
 
     Ok(())
 }

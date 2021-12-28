@@ -103,6 +103,7 @@ impl XtbMolecule {
 
 // [[file:../xtb.note::e737b33d][e737b33d]]
 /// Possible parametrisations for the Calculator.
+#[derive(Clone, Debug, Copy, PartialEq)]
 pub enum XtbMethod {
     /// GFN2-xTB
     GFN2xTB,
