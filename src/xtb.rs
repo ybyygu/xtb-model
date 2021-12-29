@@ -18,6 +18,7 @@ pub struct XtbParameters {
     max_iterations: usize,
     electronic_temperature: f64,
     method: XtbMethod,
+    lattice: Option<[f64; 9]>,
     // TODO: solvent
 }
 
@@ -49,6 +50,7 @@ impl Default for XtbParameters {
             max_iterations: 250,
             electronic_temperature: 300.0,
             method: XtbMethod::GFN2xTB,
+            lattice: None,
         }
     }
 }
@@ -98,8 +100,14 @@ impl XtbParameters {
     }
 
     /// Set xTB class of method
-    pub fn method<M: Into<XtbMethod>>(&mut self, method: M) -> &mut Self {
+    pub fn method(&mut self, method: impl Into<XtbMethod>) -> &mut Self {
         self.method = method.into();
+        self
+    }
+
+    /// Periodic lattice
+    pub fn lattice(&mut self, lattice: impl Into<Option<[f64; 9]>>) -> &mut Self {
+        self.lattice = lattice.into();
         self
     }
 }
@@ -123,7 +131,11 @@ pub struct XtbModel {
 impl XtbModel {
     /// Construct new XtbModel for atoms specified with atomic numbers in
     /// `atom_types`.
-    pub fn create<P: Into<Option<XtbParameters>>>(atom_types: &[usize], coord: &[f64], params: P) -> Result<Self> {
+    pub fn create(
+        atom_types: &[usize],
+        coord: &[f64],
+        params: impl Into<Option<XtbParameters>>,
+    ) -> Result<Self> {
         assert_eq!(
             atom_types.len() * 3,
             coord.len(),
@@ -141,7 +153,11 @@ impl XtbModel {
 
         let uhf = params.uhf as i32;
         let charge = params.charge;
-        let mol = XtbMolecule::create(&env, &atom_types, coord, charge, uhf)?;
+        let mol = if let Some(lat) = params.lattice {
+            XtbMolecule::create(&env, &atom_types, coord, charge, uhf, lat, [true; 3])?
+        } else {
+            XtbMolecule::create(&env, &atom_types, coord, charge, uhf, None, None)?
+        };
         let mut calc = XtbCalculator::new();
         calc.load_parametrization(&mol, &env, params.method)?;
         let xtb = Self {
@@ -159,11 +175,11 @@ impl XtbModel {
     }
 
     /// Update coordinates and lattice parameters (quantities in Bohr).
-    pub fn update_structure(&mut self, positions: &[f64], lattice: Option<[f64; 9]>) -> Result<()> {
+    pub fn update_structure(&mut self, positions: &[f64], lattice: impl Into<Option<[f64; 9]>>) -> Result<()> {
         assert_eq!(positions.len(), self.coord.len());
 
         self.coord.clone_from_slice(positions);
-        if let Some(lat) = lattice {
+        if let Some(lat) = lattice.into() {
             unimplemented!();
         }
 
@@ -179,7 +195,8 @@ impl XtbModel {
         mol.update(env, &self.coord, None)?;
         self.calc.load_parametrization(mol, env, self.params.method)?;
         self.calc.set_accuracy(env, 1.0);
-        self.calc.set_electronic_temperature(env, self.params.electronic_temperature);
+        self.calc
+            .set_electronic_temperature(env, self.params.electronic_temperature);
         self.calc.set_max_iterations(env, self.params.max_iterations);
         let res = self.calc.single_point(mol, env)?;
         let energy = res.get_energy(env)?;

@@ -10,7 +10,7 @@ fn test_xtb_raw_api() -> Result<()> {
     let attyp = [6, 6, 6, 1, 1, 1, 1];
 
     let env = XtbEnvironment::new();
-    let mol = XtbMolecule::create(&env, &attyp, &coord, 0.0, 0)?;
+    let mol = XtbMolecule::create(&env, &attyp, &coord, 0.0, 0, None, None)?;
     let calc = XtbCalculator::new();
     calc.load_parametrization(&mol, &env, XtbMethod::GFN2xTB)?;
     let res = calc.single_point(&mol, &env)?;

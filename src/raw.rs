@@ -67,14 +67,26 @@ pub struct XtbMolecule {
 }
 
 impl XtbMolecule {
-    /// Create new molecular structure data (quantities in Bohr).
-    pub fn create(env: &XtbEnvironment, attyp: &[i32], coord: &[f64], charge: f64, uhf: i32) -> Result<Self> {
+    /// Create new molecular structure data (quantities in Bohr). The molecular
+    /// structure data object has a fixed number of atoms and immutable atomic
+    /// identifiers.
+    pub fn create(
+        env: &XtbEnvironment,
+        attyp: &[i32],
+        coord: &[f64],
+        charge: f64,
+        uhf: i32,
+        lattice: impl Into<Option<[f64; 9]>>,
+        periodic: impl Into<Option<[bool; 3]>>,
+    ) -> Result<Self> {
         let mol = unsafe {
             let natoms = attyp.len() as i32;
             let env = env.env;
             let attyp = attyp.as_ptr();
             let coord = coord.as_ptr();
-            xtb_newMolecule(env, &natoms, attyp, coord, &charge, &uhf, null(), null())
+            let lattice = lattice.into().map_or(null(), |x| x.as_ptr());
+            let periodic = periodic.into().map_or(null(), |x| x.as_ptr());
+            xtb_newMolecule(env, &natoms, attyp, coord, &charge, &uhf, lattice, periodic)
         };
         env.check_error()?;
         let mol = Self { mol };
@@ -83,16 +95,13 @@ impl XtbMolecule {
     }
 
     /// Update coordinates and lattice parameters (quantities in Bohr)
-    pub fn update(&self, env: &XtbEnvironment, coord: &[f64], lattice: Option<[f64; 9]>) -> Result<()> {
+    pub fn update(&self, env: &XtbEnvironment, coord: &[f64], lattice: impl Into<Option<[f64; 9]>>) -> Result<()> {
         unsafe {
             let env = env.env;
             let mol = self.mol;
             let coord = coord.as_ptr();
-            if let Some(lat) = lattice {
-                xtb_updateMolecule(env, mol, coord, lat.as_ptr());
-            } else {
-                xtb_updateMolecule(env, mol, coord, null());
-            }
+            let lattice = lattice.into().map_or(null(), |x| x.as_ptr());
+            xtb_updateMolecule(env, mol, coord, lattice);
         }
         env.check_error()?;
 
@@ -146,7 +155,11 @@ impl XtbCalculator {
         Ok(())
     }
 
-    /// Set maximum number of iterations for self-consistent TB calculators.
+    /// Set maximum number of iterations for self-consistent TB calculators. Set
+    /// maximum number of iterations for self-consistent charge methods, values
+    /// smaller than one will be silently ignored by the API. Failing to
+    /// converge in a given number of cycles is not necessarily reported as an
+    /// error by the API.
     pub fn set_max_iterations(&self, env: &XtbEnvironment, n: usize) {
         unsafe {
             xtb_setMaxIter(env.env, self.calc, n as i32);
@@ -167,7 +180,8 @@ impl XtbCalculator {
         }
     }
 
-    /// Perform singlepoint calculation.
+    /// Perform singlepoint calculation. Note that the a previous result is
+    /// overwritten by default.
     pub fn single_point(&self, mol: &XtbMolecule, env: &XtbEnvironment) -> Result<XtbResults> {
         let mut res = XtbResults::new();
         unsafe {
