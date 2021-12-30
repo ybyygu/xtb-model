@@ -11,6 +11,8 @@ fn main() {
     println!("cargo:rustc-link-lib=blas");
     println!("cargo:rustc-link-lib=lapack");
     println!("cargo:rustc-link-lib=gfortran");
+    // println!("cargo:rustc-link-lib=openblas");
+    // println!("cargo:rustc-link-lib=gomp");
 
     let bindings = bindgen::Builder::default()
         .header("include/xtb.h")
