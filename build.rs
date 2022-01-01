@@ -4,15 +4,11 @@ use bindgen;
 use std::path::PathBuf;
 
 fn main() {
-    //	gcc -o test main.c -I include/xtb build/libxtb.a -lgfortran -lm -lblas -llapack
+    //  gcc -o test main.c -I include/xtb build/libxtb.a -lgfortran -lopenblas
     println!("cargo:rustc-link-search=lib");
     println!("cargo:rustc-link-lib=static=xtb");
-    println!("cargo:rustc-link-lib=m");
-    println!("cargo:rustc-link-lib=blas");
-    println!("cargo:rustc-link-lib=lapack");
     println!("cargo:rustc-link-lib=gfortran");
-    // println!("cargo:rustc-link-lib=openblas");
-    // println!("cargo:rustc-link-lib=gomp");
+    println!("cargo:rustc-link-lib=openblas");
 
     let bindings = bindgen::Builder::default()
         .header("include/xtb.h")

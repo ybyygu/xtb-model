@@ -2,7 +2,7 @@
 [package]
 name = "xtb-model"
 edition = "2021"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Wenping Guo <ybyygu@gmail.com>"]
 
 [dependencies]

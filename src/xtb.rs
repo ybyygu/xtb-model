@@ -11,14 +11,15 @@ use libxtb::*;
 // [[file:../xtb.note::392dc74e][392dc74e]]
 /// Possible parameters for XTB calculation.
 #[derive(Clone, Debug)]
-pub struct XtbParameters {
+pub struct XtbParameters<'a> {
     uhf: usize,
     charge: f64,
     verbosity: XtbOutputVerbosity,
     max_iterations: usize,
     electronic_temperature: f64,
     method: XtbMethod,
-    lattice: Option<[f64; 9]>,
+    lattice: Option<&'a [f64; 9]>,
+    periodic: [bool; 3],
     // TODO: solvent
 }
 
@@ -41,7 +42,7 @@ impl From<&str> for XtbMethod {
     }
 }
 
-impl Default for XtbParameters {
+impl<'a> Default for XtbParameters<'a> {
     fn default() -> Self {
         Self {
             uhf: 0,
@@ -51,11 +52,12 @@ impl Default for XtbParameters {
             electronic_temperature: 300.0,
             method: XtbMethod::GFN2xTB,
             lattice: None,
+            periodic: [false; 3],
         }
     }
 }
 
-impl XtbParameters {
+impl<'a> XtbParameters<'a> {
     /// Set system charge `charge`.
     pub fn charge(&mut self, charge: f64) -> &mut Self {
         self.charge = charge;
@@ -106,8 +108,9 @@ impl XtbParameters {
     }
 
     /// Periodic lattice
-    pub fn lattice(&mut self, lattice: impl Into<Option<[f64; 9]>>) -> &mut Self {
+    pub fn lattice(&mut self, lattice: impl Into<Option<&'a [f64; 9]>>) -> &mut Self {
         self.lattice = lattice.into();
+        self.periodic = [true; 3];
         self
     }
 }
@@ -115,10 +118,12 @@ impl XtbParameters {
 
 // [[file:../xtb.note::bcd483ad][bcd483ad]]
 /// High level abstraction for XTB evaluation of energy and gradient
-pub struct XtbModel {
-    params: XtbParameters,
+pub struct XtbModel<'a> {
+    params: XtbParameters<'a>,
     atom_types: Vec<i32>,
     coord: Vec<f64>,
+    lattice: Option<[f64; 9]>,
+    periodic: [bool; 3],
 
     env: XtbEnvironment,
     mol: XtbMolecule,
@@ -128,14 +133,10 @@ pub struct XtbModel {
     dipole: Option<[f64; 3]>,
 }
 
-impl XtbModel {
+impl<'a> XtbModel<'a> {
     /// Construct new XtbModel for atoms specified with atomic numbers in
     /// `atom_types`.
-    pub fn create(
-        atom_types: &[usize],
-        coord: &[f64],
-        params: impl Into<Option<XtbParameters>>,
-    ) -> Result<Self> {
+    pub fn create(atom_types: &[usize], coord: &[f64], params: impl Into<Option<XtbParameters<'a>>>) -> Result<Self> {
         assert_eq!(
             atom_types.len() * 3,
             coord.len(),
@@ -153,16 +154,16 @@ impl XtbModel {
 
         let uhf = params.uhf as i32;
         let charge = params.charge;
-        let mol = if let Some(lat) = params.lattice {
-            XtbMolecule::create(&env, &atom_types, coord, charge, uhf, lat, [true; 3])?
-        } else {
-            XtbMolecule::create(&env, &atom_types, coord, charge, uhf, None, None)?
-        };
+        let lattice = params.lattice.cloned();
+        let periodic = params.periodic;
+        let mol = XtbMolecule::create(&env, &atom_types, coord, charge, uhf, lattice.as_ref(), &periodic)?;
         let mut calc = XtbCalculator::new();
         calc.load_parametrization(&mol, &env, params.method)?;
         let xtb = Self {
             coord: coord.to_vec(),
             dipole: None,
+            lattice,
+            periodic,
             mol,
             calc,
 
@@ -179,8 +180,9 @@ impl XtbModel {
         assert_eq!(positions.len(), self.coord.len());
 
         self.coord.clone_from_slice(positions);
-        if let Some(lat) = lattice.into() {
-            unimplemented!();
+        let lat = lattice.into();
+        if lat.is_some() {
+            self.lattice.clone_from(&lat);
         }
 
         Ok(())
@@ -191,8 +193,7 @@ impl XtbModel {
         let env = &self.env;
         let mol = &self.mol;
 
-        // FIXME: lattice
-        mol.update(env, &self.coord, None)?;
+        mol.update(env, &self.coord, self.lattice.as_ref())?;
         self.calc.load_parametrization(mol, env, self.params.method)?;
         self.calc.set_accuracy(env, 1.0);
         self.calc

@@ -70,14 +70,14 @@ impl XtbMolecule {
     /// Create new molecular structure data (quantities in Bohr). The molecular
     /// structure data object has a fixed number of atoms and immutable atomic
     /// identifiers.
-    pub fn create(
+    pub fn create<'a>(
         env: &XtbEnvironment,
         attyp: &[i32],
         coord: &[f64],
         charge: f64,
         uhf: i32,
-        lattice: impl Into<Option<[f64; 9]>>,
-        periodic: impl Into<Option<[bool; 3]>>,
+        lattice: impl Into<Option<&'a [f64; 9]>>,
+        periodic: impl Into<Option<&'a [bool; 3]>>,
     ) -> Result<Self> {
         let mol = unsafe {
             let natoms = attyp.len() as i32;
@@ -95,12 +95,12 @@ impl XtbMolecule {
     }
 
     /// Update coordinates and lattice parameters (quantities in Bohr)
-    pub fn update(&self, env: &XtbEnvironment, coord: &[f64], lattice: impl Into<Option<[f64; 9]>>) -> Result<()> {
+    pub fn update(&self, env: &XtbEnvironment, coord: &[f64], lattice: Option<&[f64; 9]>) -> Result<()> {
         unsafe {
             let env = env.env;
             let mol = self.mol;
             let coord = coord.as_ptr();
-            let lattice = lattice.into().map_or(null(), |x| x.as_ptr());
+            let lattice = lattice.map_or(null(), |x| x.as_ptr());
             xtb_updateMolecule(env, mol, coord, lattice);
         }
         env.check_error()?;
