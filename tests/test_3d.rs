@@ -3,7 +3,7 @@ use anyhow::*;
 use approx::assert_relative_eq;
 
 #[test]
-fn test_xtb_model_3d() -> Result<()> {
+fn test_xtb_3d() -> Result<()> {
     use xtb_model::libxtb::*;
     use xtb_model::{XtbModel, XtbParameters};
 
@@ -55,7 +55,7 @@ fn test_xtb_model_3d() -> Result<()> {
     assert_relative_eq!(gradient[0], 5.46952312e-03, epsilon=1e-9);
 
     let mut params = XtbParameters::default();
-    params.output_muted().method("GFN1-xTB").lattice(&lattice);
+    params.output_muted().method("GFN1-xTB").lattice(lattice);
     let mut xtb = XtbModel::create(&numbers, &coord, params)?;
     let mut gradient = coord.clone();
     let energy = xtb.calculate_energy_and_gradient(&mut gradient)?;
