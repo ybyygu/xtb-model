@@ -47,21 +47,20 @@ fn test_xtb_model_3d() -> Result<()> {
     let res = calc.single_point(&mol, &env)?;
     let energy = res.get_energy(&env)?;
     assert_relative_eq!(energy, -31.906084801853034, epsilon=1e-9);
-    // FIXME: still incorrect
-    // let mut gradient = coord.clone();
-    // res.get_gradient(&env, &mut gradient)?;
-    // assert_relative_eq!(gradient[0], 5.46952312e-03, epsilon=1e-9);
-    // dbg!(gradient);
+    let mut gradient = coord.clone();
+    res.get_gradient(&env, &mut gradient)?;
+    assert_relative_eq!(gradient[0], 5.46952312e-03, epsilon=1e-9);
 
-    let numbers = [6, 6, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 7, 7, 7];
     let mut params = XtbParameters::default();
     params.output_muted().method("GFN1-xTB").lattice(&lattice);
     let mut xtb = XtbModel::create(&numbers, &coord, params)?;
     let mut gradient = coord.clone();
     let energy = xtb.calculate_energy_and_gradient(&mut gradient)?;
     assert_relative_eq!(energy, -31.906084801853034, epsilon=1e-9);
-    // // assert_relative_eq!(gradient[0], 5.46952312e-03, epsilon=1e-9);
-    // dbg!(gradient);
+    assert_relative_eq!(gradient[0], 5.46952312e-03, epsilon=1e-9);
+    assert_relative_eq!(gradient[39], 0.00134273926, epsilon=1e-9);
+    assert_relative_eq!(gradient[58], -0.000601295157, epsilon=1e-9);
+    dbg!(gradient);
 
     Ok(())
 }

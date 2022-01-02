@@ -136,15 +136,13 @@ pub struct XtbModel<'a> {
 impl<'a> XtbModel<'a> {
     /// Construct new XtbModel for atoms specified with atomic numbers in
     /// `atom_types`.
-    pub fn create(atom_types: &[usize], coord: &[f64], params: impl Into<Option<XtbParameters<'a>>>) -> Result<Self> {
+    pub fn create(atom_types: &[i32], coord: &[f64], params: impl Into<Option<XtbParameters<'a>>>) -> Result<Self> {
         assert_eq!(
             atom_types.len() * 3,
             coord.len(),
             "Dimension missmatch between numbers and positions"
         );
-
         let env = XtbEnvironment::new();
-        let atom_types: Vec<_> = atom_types.iter().map(|&x| x as i32).collect();
         let params = params.into().unwrap_or_default();
         match params.verbosity {
             XtbOutputVerbosity::Verbose => env.set_output_verbose()?,
@@ -168,7 +166,7 @@ impl<'a> XtbModel<'a> {
             calc,
 
             params,
-            atom_types,
+            atom_types: atom_types.to_vec(),
             env,
         };
 

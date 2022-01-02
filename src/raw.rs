@@ -234,7 +234,7 @@ impl XtbResults {
     /// Get gradient in Hartree / Bohr
     pub fn get_gradient(&self, env: &XtbEnvironment, gradient: &mut [f64]) -> Result<()> {
         unsafe {
-            xtb_getDipole(env.env, self.res, gradient.as_mut_ptr());
+            xtb_getGradient(env.env, self.res, gradient.as_mut_ptr());
         }
         env.check_error()?;
         Ok(())
