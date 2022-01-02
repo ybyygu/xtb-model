@@ -44,8 +44,11 @@ fn test_xtb_3d() -> Result<()> {
     let mol = XtbMolecule::create(&env, &numbers, &coord, 0.0, 0, &lattice, &periodic)?;
     let calc = XtbCalculator::new();
     calc.load_parametrization(&mol, &env, XtbMethod::GFN2xTB)?;
-    // GFN2-xTB should fail for periodic input: Multipoles not available with PBC
+    // GFN2-xTB does not support periodic boundary conditions.
+    // It should fail for periodic input: Multipoles not available with PBC
     let res = calc.single_point(&mol, &env);
+    assert!(res.is_err());
+
     calc.load_parametrization(&mol, &env, XtbMethod::GFN1xTB)?;
     let res = calc.single_point(&mol, &env)?;
     let energy = res.get_energy(&env)?;
@@ -63,6 +66,13 @@ fn test_xtb_3d() -> Result<()> {
     assert_relative_eq!(gradient[0], 5.46952312e-03, epsilon=1e-9);
     assert_relative_eq!(gradient[39], 0.00134273926, epsilon=1e-9);
     assert_relative_eq!(gradient[58], -0.000601295157, epsilon=1e-9);
+
+    // test update
+    let mut coord = coord.clone();
+    coord[0] = 0.477104501;
+    xtb.update_structure(&coord, None)?;
+    let energy = xtb.calculate_energy_and_gradient(&mut gradient)?;
+    assert_relative_eq!(energy, -31.872139660919, epsilon=1e-9);
 
     Ok(())
 }

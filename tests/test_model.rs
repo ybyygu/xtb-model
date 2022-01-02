@@ -23,7 +23,7 @@ fn test_xtb_model() -> Result<()> {
         .unpaired_electrons(0)
         .output_verbose()
         .method("GFN1-xTB");
-    let mut xtb = XtbModel::create(&attyp, &coord, dbg!(params))?;
+    let mut xtb = XtbModel::create(&attyp, &coord, params)?;
     let energy = xtb.calculate_energy_and_gradient(&mut gradient)?;
     assert_relative_eq!(energy, -8.424757953815186, epsilon = 1e-9);
 
