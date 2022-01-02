@@ -43,6 +43,9 @@ fn test_xtb_model_3d() -> Result<()> {
     env.set_output_verbose();
     let mol = XtbMolecule::create(&env, &numbers, &coord, 0.0, 0, &lattice, &periodic)?;
     let calc = XtbCalculator::new();
+    calc.load_parametrization(&mol, &env, XtbMethod::GFN2xTB)?;
+    // GFN2-xTB should fail for periodic input: Multipoles not available with PBC
+    let res = calc.single_point(&mol, &env);
     calc.load_parametrization(&mol, &env, XtbMethod::GFN1xTB)?;
     let res = calc.single_point(&mol, &env)?;
     let energy = res.get_energy(&env)?;
@@ -60,7 +63,6 @@ fn test_xtb_model_3d() -> Result<()> {
     assert_relative_eq!(gradient[0], 5.46952312e-03, epsilon=1e-9);
     assert_relative_eq!(gradient[39], 0.00134273926, epsilon=1e-9);
     assert_relative_eq!(gradient[58], -0.000601295157, epsilon=1e-9);
-    dbg!(gradient);
 
     Ok(())
 }

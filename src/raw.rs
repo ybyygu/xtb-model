@@ -24,12 +24,10 @@ impl XtbEnvironment {
     /// Check current status of calculation environment.
     pub fn check_error(&self) -> Result<()> {
         let ret = unsafe { xtb_checkEnvironment(self.env) };
-        let mut err_msg = vec![];
         if ret != 0 {
             // Show and empty error stack
-            unsafe { xtb_showEnvironment(self.env, err_msg.as_mut_ptr()) };
-            // TODO: show formated error message
-            bail!("Error occured in the API with code {}!", ret);
+            unsafe { xtb_showEnvironment(self.env, null()) };
+            bail!("Error occured in the API with return code {}!", ret);
         }
         Ok(())
     }
